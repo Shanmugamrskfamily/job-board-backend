@@ -2,15 +2,13 @@ const mongoose = require('mongoose');
 
 const jobSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  company: { type: String, required: true },
   description: { type: String, required: true },
+  company: { type: String, required: true },
   location: { type: String, required: true },
-  employmentType: { type: String, required: true }, // Full-time, Part-time, Contract, etc.
-  requirements: { type: [String], default: [] }, // Array of required skills or qualifications
-  responsibilities: { type: [String], default: [] }, // Array of job responsibilities
-  salary: { type: Number }, // Salary information
-  postedAt: { type: Date, default: Date.now }, // Date when the job was posted
-  // ... other job-related fields
+  requirements: { type: [String], default: [] }, // Array of requirements
+  skills: { type: [String], default: [] }, // Array of skills
+  postedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  applicants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 });
 
 const Job = mongoose.model('Job', jobSchema);
