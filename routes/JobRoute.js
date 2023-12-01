@@ -138,8 +138,6 @@ router.get('/get-job/:jobId', async (req, res) => {
     }
   });
   
-  
-
 // Route to edit a specific job by ID
 router.put('/edit-job/:jobId', async (req, res) => {
     try {
@@ -272,6 +270,28 @@ router.get('/get-applicants/:jobId', async (req, res) => {
       res.status(500).json({ message: 'Server Error' });
     }
   });
+
+  // Route to get jobs applied by a specific user
+router.get('/get-applied-jobs/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Find the user to check if they exist
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Find jobs where the user has applied
+    const appliedJobs = await Job.find({ applicants: userId }).populate('postedBy', 'username userId');
+
+    res.json({ appliedJobs });
+  } catch (error) {
+    console.error('Error getting applied jobs:', error.message);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
 
   // Route to search jobs based on search text
 router.get('/search-jobs/:searchText', async (req, res) => {
