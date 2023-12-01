@@ -234,7 +234,7 @@ router.post('/post-skills', async (req, res) => {
       }
   
       // Convert skills string to an array
-      const skillsArray = req.body.skills.split(',').map(skill => skill.trim());
+      const skillsArray = req.body.skills.split(';').map(skill => skill.trim());
   
       // Create skills for the user
       const newSkills = new Skills({
@@ -288,7 +288,7 @@ router.put('/edit-skills', async (req, res) => {
     }
 
     // Convert skills string to an array
-    const skillsArray = req.body.skills.split(',').map(skill => skill.trim());
+    const skillsArray = req.body.skills.split(';').map(skill => skill.trim());
 
     // Update the skills
     userSkills.skills = skillsArray; // Convert skills string to an array
