@@ -8,6 +8,8 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const User = require('../models/User');
 const { verifyEmail } = require('../controllers/authController');
+const { readFileSync } = require('fs');
+const { join } = require('path');
 
 
 const generateVerificationToken = () => {
@@ -174,7 +176,7 @@ router.post('/login', async (req, res) => {
         },
       });
   
-      const resetLink = `http://localhost:5000/api/auth/reset-password/${resetToken}`;
+      const resetLink = `http://localhost:5173/forgot-password-link/${resetToken}`;
   
       const mailOptions = {
         from: process.env.E_MAIL,
@@ -198,7 +200,7 @@ router.post('/login', async (req, res) => {
   });
 
 // Route for handling the password reset form
-router.get('/reset-password/:token', async (req, res) => {
+router.get('/reset-password-verify/:token', async (req, res) => {
     const resetToken = req.params.token;
   
     try {
@@ -222,34 +224,63 @@ router.get('/reset-password/:token', async (req, res) => {
   
 // Route for processing the password reset form
 router.post('/reset-password/:token', async (req, res) => {
-    const resetToken = req.params.token;
-    const { newPassword } = req.body;
-  
-    try {
-      // Find the user with the provided reset token
-      const user = await User.findOne({
-        resetPasswordToken: resetToken,
-        resetPasswordExpires: { $gt: Date.now() }, // Check if the token is still valid
-      });
-  
-      if (!user) {
-        return res.status(400).json({ message: 'Invalid or expired token' });
-      }
-  
-      // Update the user's password and reset token fields
-      user.password = await bcrypt.hash(newPassword, 10);
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpires = undefined;
-  
-      // Save the updated user document
-      await user.save();
-  
-      res.json({ message: 'Password reset successful. You can now log in with your new password.' });
-    } catch (error) {
-      console.error('Error resetting password:', error.message);
-      res.status(500).json({ message: 'Server Error' });
-    }
-  });
+  const resetToken = req.params.token;
+  const { newPassword } = req.body;
 
+  try {
+    // Find the user with the provided reset token
+    const user = await User.findOne({
+      resetPasswordToken: resetToken,
+      resetPasswordExpires: { $gt: Date.now() }, // Check if the token is still valid
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired token' });
+    }
+
+    // Update the user's password and reset token fields
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    // Save the updated user document
+    await user.save();
+
+    // Send a professional-looking email
+    const transporter = nodemailer.createTransport({
+      service: 'outlook',
+      auth: {
+        user: process.env.E_MAIL,
+        pass: process.env.E_PASS,
+      },
+    });
+
+    // Read the email template file
+    const emailTemplatePath = join(__dirname, 'email-template.html');
+    const emailTemplate = readFileSync(emailTemplatePath, 'utf-8');
+
+    // Replace placeholders in the template
+    const formattedEmail = emailTemplate.replace('{{username}}', user.username).replace('{{newPassword}}', newPassword);
+
+    const mailOptions = {
+      from: process.env.E_MAIL,
+      to: user.email,
+      subject: 'Password Reset Successful - Job Board',
+      html: formattedEmail,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending password reset success email:', error.message);
+        return res.status(500).json({ message: 'Server Error' });
+      }
+      console.log('Password reset success email sent:', info.response);
+      res.json({ message: 'Password reset successful. You can now log in with your new password.' });
+    });
+  } catch (error) {
+    console.error('Error resetting password:', error.message);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
   
 module.exports = router;
