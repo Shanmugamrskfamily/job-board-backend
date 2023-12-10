@@ -6,7 +6,16 @@ const educationSchema = new mongoose.Schema({
   school: { type: String, required: true },
   degree: { type: String, required: true },
   fieldOfStudy: { type: String },
-  graduationDate: { type: Date, required: true },
+  graduationDate: {
+    type: Date,
+    required: true,
+    validate: {
+      validator: function (date) {
+        return date <= Date.now(); 
+      },
+      message: 'Invalid graduation date',
+    },
+  },
 });
 
 const Education = mongoose.model('Education', educationSchema);

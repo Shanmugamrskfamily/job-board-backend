@@ -53,7 +53,7 @@ router.post('/signup', async (req, res) => {
         },
       });
   
-      const verificationLink = `http://localhost:5000/api/auth/verify/${verificationToken}`;
+      const verificationLink = `http://localhost:5173/verify/${verificationToken}`;
   
       const mailOptions = {
         from: process.env.E_MAIL,

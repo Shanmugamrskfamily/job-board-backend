@@ -19,7 +19,9 @@ const userSchema = new mongoose.Schema({
   resumeUrl: String,
   jobPreferences: [{ type: String }],
   appliedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Job' }], // Array of applied job IDs
-});
+},
+{ timestamps: true }
+);
 
 const User = mongoose.model('User', userSchema);
 
