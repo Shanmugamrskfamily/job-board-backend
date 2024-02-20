@@ -1,4 +1,4 @@
-// models/Employement.js
+// models/Employment.js
 const mongoose = require('mongoose');
 
 const employmentSchema = new mongoose.Schema({
@@ -8,18 +8,13 @@ const employmentSchema = new mongoose.Schema({
   startDate: {
     type: Date,
     required: true,
-    validate: {
-      validator: function (date) {
-        return date <= this.endDate; 
-      },
-      message: 'Invalid start date',
-    },
   },
   endDate: {
     type: Date,
     validate: {
       validator: function (date) {
-        return date >= this.startDate; 
+        // Allow null or a date that is greater than or equal to the startDate
+        return date === null || date >= this.startDate; 
       },
       message: 'Invalid end date',
     },

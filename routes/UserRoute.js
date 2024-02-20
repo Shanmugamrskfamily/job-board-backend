@@ -590,7 +590,7 @@ router.post('/set-job-preference', async (req, res) => {
       }
   
       // Extract job titles from the request body (comma-separated string)
-      const jobTitles = req.body.jobTitles.split(',').map(title => title.trim());
+      const jobTitles = req.body.jobTitles.split(';').map(title => title.trim());
   
       // Update the job preferences in the user document
       user.jobPreferences = jobTitles;
@@ -669,7 +669,7 @@ router.put('/edit-job-preferences', async (req, res) => {
       const jobPreferences = req.body.jobPreferences;
   
       // Check if jobPreferences is a string and split it into an array
-      user.jobPreferences = typeof jobPreferences === 'string' ? jobPreferences.split(',').map(pref => pref.trim()) : jobPreferences || [];
+      user.jobPreferences = typeof jobPreferences === 'string' ? jobPreferences.split(';').map(pref => pref.trim()) : jobPreferences || [];
   
       // Save the updated user document
       await user.save();

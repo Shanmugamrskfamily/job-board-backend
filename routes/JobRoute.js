@@ -85,24 +85,42 @@ router.post('/post-job', async (req, res) => {
   
 
 
-// Route to get all jobs posted by all users with usernames
 router.get('/get-all-jobs', async (req, res) => {
-    try {
-      // Retrieve all jobs with user details
-      const allJobs = await Job.find()
-        .populate({
-          path: 'postedBy',
-          select: 'username userId', // Select only username and userId from the postedBy field
-          model: User,
-        })
-        .select('title description company location skills requirements postedBy');
-  
-      res.json({ jobs: allJobs });
-    } catch (error) {
-      console.error('Error getting all jobs:', error.message);
-      res.status(500).json({ message: 'Server Error' });
-    }
-  });
+  try {
+    const userId = req.user.userId; // Retrieve the user ID from the authenticated user
+
+    // Retrieve all jobs with user details and check if the user has applied for each job
+    const allJobs = await Job.find()
+      .populate({
+        path: 'postedBy',
+        select: 'username userId',
+        model: User,
+      })
+      .populate({
+        path: 'applicants',
+        select: 'username userId',
+        model: User,
+      })
+      .select('title description company location updatedAt skills requirements postedBy applicants');
+
+    // Sort jobs based on updatedAt in descending order
+    const sortedJobs = allJobs.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+    const jobsWithAppliedStatus = sortedJobs.map(job => {
+      // Check if the user has applied for the current job
+      const hasApplied = job.applicants.some(applicant => applicant._id.toString() === userId);
+
+      return { ...job._doc, applied: hasApplied };
+    });
+
+    res.json({ jobs: jobsWithAppliedStatus });
+  } catch (error) {
+    console.error('Error getting all jobs:', error.message);
+    console.log(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 
   // Route to get all jobs posted by a specific user
 router.get('/get-jobs-by-user/:userId', async (req, res) => {
@@ -137,7 +155,7 @@ router.get('/get-job/:jobId', async (req, res) => {
           select: 'username userId', // Select only username and userId from the postedBy field
           model: User,
         })
-        .select('title description company location skills requirements postedBy');
+        .select('title description company location skills requirements postedBy applicants');
   
       if (!job) {
         return res.status(404).json({ message: 'Job not found' });
@@ -319,9 +337,9 @@ router.get('/get-applicants/:jobId', async (req, res) => {
   });
 
   // Route to get jobs applied by a specific user
-router.get('/get-applied-jobs/:userId', async (req, res) => {
+router.get('/get-applied-jobs', async (req, res) => {
   try {
-    const userId = req.params.userId;
+    const userId = req.user.userId;
 
     // Find the user to check if they exist
     const user = await User.findById(userId);
